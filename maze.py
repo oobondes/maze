@@ -1,11 +1,35 @@
 import os
 import random
 import numpy as np
-import time
+import colorama as color
+import os
+import pygame
+from pygame.locals import (
+    K_UP,
+    K_DOWN,
+    K_LEFT,
+    K_RIGHT,
+    K_ESCAPE,
+    KEYDOWN,
+    QUIT,
+)
+win = \
+    r"""    ____     __   ,-----.      ___    _         .--.      .--..-./`) ,---.   .--. 
+   \   \   /  /.'  .-,  '.  .'   |  | |        |  |_     |  |\ .-.')|    \  |  | 
+    \  _. /  '/ ,-.|  \ _ \ |   .'  | |        | _( )_   |  |/ `-' \|  ,  \ |  | 
+     _( )_ .';  \  '_ /  | :.'  '_  | |        |(_ o _)  |  | `-'`"`|  |\_ \|  | 
+ ___(_ o _)' |  _`,/ \ _/  |'   ( \.-.|        | (_,_) \ |  | .---. |  _( )_\  | 
+|   |(_,_)'  : (  '\_/ \   ;' (`. _` /|        |  |/    \|  | |   | | (_ o _)  | 
+|   `-'  /    \ `"/  \  ) / | (_ (_) _)        |  '  /\  `  | |   | |  (_,_)\  | 
+ \      /      '. \_/``".'   \ /  . \ /        |    /  \    | |   | |  |    |  | 
+  `-..-'         '-----'      ``-'`-''         `---'    `---` '---' '--'    '--' 
+                                                                                 """
+color.init(autoreset=True)
+
 class maze:
     wall = 2
     space = 3
-    def __init__(self, size, ysize = None, wall = '#', space = '^'):
+    def __init__(self, size, ysize = None, wall = '#', space = ' '):
         self.wall = wall
         self.space = space
         self.ysize = ysize if ysize else size
@@ -35,6 +59,14 @@ class maze:
         if shuf:random.shuffle(n)
         return n
 
+    def spaces(self, x, y):
+        s = list()
+        for i,j in [[x+1,y],[x-1,y],[x,y+1],[x,y-1]]:
+            if 0<=i<self.size and 0<=j<self.ysize:
+                s.append([i,j])
+            else:
+                s.append([])
+        return s
 
     def iswall(self,x,y):
         n = self.neighbors(x,y)
@@ -48,7 +80,7 @@ class maze:
 
     def genMaze(self):
 
-        self.mz = np.zeros((self.ysize,self.size),dtype=np.str)
+        self.mz = np.zeros((self.ysize,self.size),dtype=str)
         
         unvisited = list()
         for x in range(self.size):
@@ -88,10 +120,16 @@ class maze:
                     else:
                         if [i,j] not in next:
                             next.insert(0,[i,j])   #append([i,j])
-            self.printMaze()
+            #self.printMaze()
             #breakpoint()
-        print(ord)
-        print(f'len:{len(ord)}\origLen:{v}')
+        #print(ord)
+        #print(f'len:{len(ord)}\origLen:{v}')
+        for i in range(len(self.mz)):
+            for j in range(len(self.mz[0])):
+                if self.mz[i][j] == '':
+                    self.mz[i][j] = self.wall
+        self.curs=[np.where(self.mz[0] == self.space)[0][0],0]
+        self.goal=[np.where(self.mz[0] == self.space)[0][-1],self.ysize-1]
 
 
     
@@ -125,20 +163,102 @@ class maze:
     
 
     def printMaze(self):
-        print(''.join(['=' for x in range(2+len(self.mz[0]))]))
-        for line in self.mz:
-            #print(*line,sep='')
-            print('|',end='')
-            for c in line:
-                print(c,end='')#if c==self.wall:print('#',end='')
-                #if c==self.space:print('O',end='')
-            print('|')
-        print(''.join(['=' for x in range(2+len(self.mz[0]))]))
+        mz_s = ''
+        os.system('cls')
+        #print(''.join([color.Back.GREEN+'=' for x in range(2+len(self.mz[0]))]))
+        mz_s+= color.Back.GREEN + '='*(2+len(self.mz[0])) + color.Back.RESET + '\n'
+        for i, line in enumerate(self.mz):
+            #print(color.Back.GREEN +'|',end='')
+            mz_s += color.Back.GREEN +'|'
+
+            for j, c in enumerate(line):
+                if i==self.curs[1] and j==self.curs[0]:
+                    #print(color.Back.BLUE+' ',end='')
+                    mz_s+= color.Back.BLUE+' '
+                    continue
+                if i==self.goal[1] and j==self.goal[0]:
+                    #print(color.Back.BLUE+' ',end='')
+                    mz_s+= color.Back.RED+' '
+                    continue
+                if c==self.wall:
+                    #print(color.Back.GREEN +'*',end='')
+                    mz_s+= color.Back.GREEN+' '
+                elif c==self.space:
+                   #print(color.Back.BLACK + self.space,end='')
+                    mz_s+= color.Back.YELLOW +' '
+                else: 
+                    #print(color.Back.RED+c,end='')
+                    mz_s+= color.Back.RED+' '
+            #print(color.Back.GREEN +'|')
+            mz_s+= color.Back.GREEN+'|' + color.Back.RESET + '\n'
+        #print(''.join([color.Back.GREEN+'=' for x in range(2+len(self.mz[0]))]))
+        mz_s+= color.Back.GREEN + '='*(2+len(self.mz[0])) +color.Back.RESET +   '\n'
         print ('\n')
-        for line in self.mz:
-            print(*line, sep='')
+        print(mz_s)
+
+    def left(self):
+        x,y = self.curs
+        if x-1 >= 0:
+            if self.mz[y][x-1] == self.space:
+                self.curs=[x-1,y]
+        return
+
+    def right(self):
+        x,y = self.curs
+        if x-1 <= self.size:
+            if self.mz[y][x+1] == self.space:
+                self.curs=[x+1,y]
+        return
+
+    def up(self):
+        x,y = self.curs
+        if y-1 >= 0:
+            if self.mz[y-1][x] == self.space:
+                self.curs=[x,y-1]
+        return
+
+    def down(self):
+        x,y = self.curs
+        if y+1 <= self.ysize:
+            if self.mz[y+1][x] == self.space:
+                self.curs=[x,y+1]
+        return
+
+    def run(self):
+        pygame.init()
+        screen = pygame.display.set_mode((800, 600))
+        running = True
+        while running:
+            if self.curs == self.goal:
+                print(win)
+                return
+            # Look at every event in the queue
+            for event in pygame.event.get():
+                # Did the user hit a key?
+                if event.type == KEYDOWN:
+                    # Was it the Escape key? If so, stop the loop.
+                    if event.key == K_ESCAPE:
+                        running = False
+                    if event.key == K_DOWN:
+                        self.down()
+                    if event.key == K_UP:
+                        self.up()
+                    if event.key == K_LEFT:
+                        self.left()
+                    if event.key == K_RIGHT:
+                        self.right()
+                   # if even.key == pygame.locals.K_LCTRL:
+                   #     self.solve()
+                    self.printMaze()
+
+                    # Did the user click the window close button? If so, stop the loop.
+                    if event.key == K_ESCAPE:
+                        running = False
+            
+
+
 
 if __name__ == '__main__':
-    m = maze(8,ysize=20)
+    m = maze(30)
     m.printMaze()
-
+    m.run()
