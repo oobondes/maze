@@ -4,6 +4,8 @@ import numpy as np
 import colorama as color
 import os
 import pygame
+import time
+import platform
 from pygame.locals import (
     K_UP,
     K_DOWN,
@@ -13,6 +15,8 @@ from pygame.locals import (
     KEYDOWN,
     QUIT,
 )
+
+clear = 'cls' if platform.system() == 'Windows' else 'clear'
 win = \
     r"""    ____     __   ,-----.      ___    _         .--.      .--..-./`) ,---.   .--. 
    \   \   /  /.'  .-,  '.  .'   |  | |        |  |_     |  |\ .-.')|    \  |  | 
@@ -77,6 +81,50 @@ class maze:
                 count += 1
         return count>1
 
+#this code was copy and pasted and does not work yet
+#FIX THIS HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    def solve(self):
+        prev = dict()
+        dst = dict()
+        q = list()
+        for y in range(len(self.mz)):
+            for x in range(len(self.mz[0])):
+                if self.mz[y][x] == self.space:
+                    prev[f'{x},{y}'] = ''
+                    dst[f'{x},{y}'] = 99999
+                    q.append(f'{x},{y}')
+        dst[f'{self.curs[0]},{self.curs[1]}'] = 0
+        next = [f'{self.curs[0]},{self.curs[1]}']
+        while q:
+            u = next.pop(0)
+            del q[q.index(u)]
+            x,y = [int(i) for i in u.split(',')]
+            for pt in [[x+1,y],[x,y+1],[x-1,y],[x,y-1]]:
+                if 0<=pt[0]<=self.size and 0<=pt[1]<=self.ysize and f'{pt[0]},{pt[1]}' in q:
+                    alt = dst[u] + 1
+                    v=f'{pt[0]},{pt[1]}'
+                    if alt < dst[v]:
+                        dst[v] = alt
+                        prev[v] = u
+                        next.append(v)
+            next.sort(key=lambda x: dst[x])
+            if u == f'{self.goal[0]},{self.goal[1]}':
+                break
+        route = []
+        pointer = f'{self.goal[0]},{self.goal[1]}'
+        
+        while True:
+            if pointer == '':break
+            tmp = prev[pointer]
+            route.insert(0,tmp)
+            pointer = tmp
+            if tmp == f'{self.curs[0]},{self.curs[1]}':
+                break 
+        for pt in route:
+            self.curs = [int(i) for i in pt.split(',')]
+            self.printMaze()
+            time.sleep(.15)
+
 
     def genMaze(self):
 
@@ -126,7 +174,7 @@ class maze:
         #print(f'len:{len(ord)}\origLen:{v}')
         for i in range(len(self.mz)):
             for j in range(len(self.mz[0])):
-                if self.mz[i][j] == '':
+                if self.mz[i][j] == '0':
                     self.mz[i][j] = self.wall
         self.curs=[np.where(self.mz[0] == self.space)[0][0],0]
         self.goal=[np.where(self.mz[0] == self.space)[0][-1],self.ysize-1]
@@ -164,7 +212,6 @@ class maze:
 
     def printMaze(self):
         mz_s = ''
-        os.system('cls')
         #print(''.join([color.Back.GREEN+'=' for x in range(2+len(self.mz[0]))]))
         mz_s+= color.Back.GREEN + '='*(2+len(self.mz[0])) + color.Back.RESET + '\n'
         for i, line in enumerate(self.mz):
@@ -188,12 +235,13 @@ class maze:
                     mz_s+= color.Back.YELLOW +' '
                 else: 
                     #print(color.Back.RED+c,end='')
-                    mz_s+= color.Back.RED+' '
+                    mz_s+= color.Back.YELLOW+' '
             #print(color.Back.GREEN +'|')
             mz_s+= color.Back.GREEN+'|' + color.Back.RESET + '\n'
         #print(''.join([color.Back.GREEN+'=' for x in range(2+len(self.mz[0]))]))
         mz_s+= color.Back.GREEN + '='*(2+len(self.mz[0])) +color.Back.RESET +   '\n'
         print ('\n')
+        os.system(clear)
         print(mz_s)
 
     def left(self):
@@ -238,7 +286,8 @@ class maze:
                 if event.type == KEYDOWN:
                     # Was it the Escape key? If so, stop the loop.
                     if event.key == K_ESCAPE:
-                        running = False
+                        self.solve()
+                        #running = False
                     if event.key == K_DOWN:
                         self.down()
                     if event.key == K_UP:
@@ -259,6 +308,7 @@ class maze:
 
 
 if __name__ == '__main__':
-    m = maze(30)
+    size = os.get_terminal_size()
+    m = maze(size.columns-3,size.lines-3)
     m.printMaze()
     m.run()
