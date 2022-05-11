@@ -1,20 +1,12 @@
+#!  /usr/bin/python3
 import os
 import random
 import numpy as np
 import colorama as color
+import keyboard
 import os
-import pygame
 import time
 import platform
-from pygame.locals import (
-    K_UP,
-    K_DOWN,
-    K_LEFT,
-    K_RIGHT,
-    K_ESCAPE,
-    KEYDOWN,
-    QUIT,
-)
 
 clear = 'cls' if platform.system() == 'Windows' else 'clear'
 win = \
@@ -123,7 +115,7 @@ class maze:
         for pt in route:
             self.curs = [int(i) for i in pt.split(',')]
             self.printMaze()
-            time.sleep(.15)
+            time.sleep(.08)
 
 
     def genMaze(self):
@@ -253,7 +245,7 @@ class maze:
 
     def right(self):
         x,y = self.curs
-        if x-1 <= self.size:
+        if x+1 < self.size:
             if self.mz[y][x+1] == self.space:
                 self.curs=[x+1,y]
         return
@@ -267,42 +259,41 @@ class maze:
 
     def down(self):
         x,y = self.curs
-        if y+1 <= self.ysize:
+        if y+1 < self.ysize:
             if self.mz[y+1][x] == self.space:
                 self.curs=[x,y+1]
         return
 
     def run(self):
-        pygame.init()
-        screen = pygame.display.set_mode((800, 600))
         running = True
         while running:
+            time.sleep(.15)#to slow down input intake
+
+            #checks for completion of maze
             if self.curs == self.goal:
                 print(win)
                 return
-            # Look at every event in the queue
-            for event in pygame.event.get():
-                # Did the user hit a key?
-                if event.type == KEYDOWN:
-                    # Was it the Escape key? If so, stop the loop.
-                    if event.key == K_ESCAPE:
-                        self.solve()
-                        #running = False
-                    if event.key == K_DOWN:
-                        self.down()
-                    if event.key == K_UP:
-                        self.up()
-                    if event.key == K_LEFT:
-                        self.left()
-                    if event.key == K_RIGHT:
-                        self.right()
-                   # if even.key == pygame.locals.K_LCTRL:
-                   #     self.solve()
-                    self.printMaze()
-
-                    # Did the user click the window close button? If so, stop the loop.
-                    if event.key == K_ESCAPE:
-                        running = False
+            #grabs key to determine direction for cursor
+            dir = keyboard.read_key()
+            
+            if dir == 'f':
+                self.solve()
+                self.printMaze()
+                #running = False
+            if dir == 's':
+                self.down()
+                self.printMaze()
+            if dir == 'w':
+                self.up()
+                self.printMaze()
+            if dir == 'a':
+                self.left()
+                self.printMaze()
+            if dir == 'd':
+                self.right()
+                self.printMaze()
+            if dir == 'q':#quits game
+                running = False
             
 
 
